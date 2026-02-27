@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZorgMatch Platform - MVP Prototype
 
-## Getting Started
+Een Nederlands zorgkoppelingsplatform dat zorgvragers thuis verbindt met gecertificeerde zzp-zorgverleners in de buurt.
 
-First, run the development server:
+## Tech Stack
+
+- **Frontend/Backend**: Next.js 14 (App Router, Server Components)
+- **Database/Auth/Storage**: Supabase (EU West - Frankfurt)
+- **Styling**: Tailwind CSS v4
+- **Taal**: TypeScript
+
+## Snel starten
+
+### 1. Supabase instellen
+
+1. Maak een account op [supabase.com](https://supabase.com)
+2. Maak een nieuw project in de **EU West (Frankfurt)** regio
+3. Ga naar **SQL Editor** en voer het schema uit: `supabase/schema.sql`
+4. Ga naar **Storage** → maak bucket `documenten` aan (private)
+
+### 2. Environment variables
+
+Vul `.env.local` aan met uw Supabase-gegevens:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Installeren en starten
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000)
 
-## Learn More
+### 4. Demo-accounts aanmaken
 
-To learn more about Next.js, take a look at the following resources:
+Ga naar `/aanmelden` en maak accounts aan:
+- **Zorgvrager**: kies "Ik zoek zorg"
+- **Zorgverlener**: kies "Ik bied zorg aan"
+- **Beheer**: na aanmaken, update de rol direct in Supabase:
+  ```sql
+  UPDATE gebruikers SET rol = 'BEHEER' WHERE email = 'uw@email.nl';
+  ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pagina-overzicht
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| URL | Beschrijving |
+|-----|-------------|
+| `/` | Landing page |
+| `/aanmelden` | Registratie (zorgvrager of zorgverlener) |
+| `/inloggen` | Login |
+| `/zorgvrager/dashboard` | Zorgvrager overzicht |
+| `/zorgvrager/zorgvraag/nieuw` | Nieuwe zorgaanvraag indienen |
+| `/zorgverlener/dashboard` | Zorgverlener overzicht |
+| `/zorgverlener/opdrachten` | Beschikbare zorgvragen |
+| `/zorgverlener/documenten` | Documenten uploaden |
+| `/beheer/dashboard` | Admin overzicht |
+| `/beheer/goedkeuring` | ZZP-goedkeuring (handmatig) |
+| `/beheer/gebruikers` | Gebruikersoverzicht |
+| `/beheer/indicaties` | Tarieven beheren |
+| `/beheer/analytics` | Platform statistieken |
 
-## Deploy on Vercel
+## EU Data Compliance (AVG)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Service | Data locatie | Certificering |
+|---------|-------------|---------------|
+| PostgreSQL database | Supabase EU West (Frankfurt) | ISO 27001 |
+| Authenticatie | Supabase EU West (Frankfurt) | ISO 27001 |
+| Bestandsopslag | Supabase Storage EU | ISO 27001 |
+| Betalingen (fase 2) | Mollie (Nederland) | PCI DSS |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Fase 2 - Roadmap
+
+- [ ] Mollie betalingen met automatische commissie-splitsing
+- [ ] Push notificaties (Firebase Cloud Messaging / Expo)
+- [ ] Kaart-gebaseerde matching met PostGIS
+- [ ] Berichten-systeem
+- [ ] React Native (Expo) mobiele app voor iOS + Android
+- [ ] BigQuery EU analytics pipeline via Segment
+- [ ] ISO 27001 / ISO 9001 documentatie
+- [ ] Internationale uitbreiding (Belgisch, Duits)
