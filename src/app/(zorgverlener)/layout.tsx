@@ -44,6 +44,25 @@ export default async function ZorgverlenerLayout({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
+    // Fallback: check demo cookie (works alongside real Supabase)
+    const cookieStore = await cookies()
+    const demoCookie = cookieStore.get(DEMO_COOKIE)
+    if (demoCookie) {
+      try {
+        const session = JSON.parse(decodeURIComponent(demoCookie.value))
+        if (session.rol === 'ZORGVERLENER') {
+          return (
+            <div className="min-h-screen bg-gray-50">
+              <Navbar rol="ZORGVERLENER" naam={session.naam} />
+              <div className="flex">
+                <Sidebar rol="ZORGVERLENER" />
+                <main className="flex-1 p-6 min-w-0 max-w-5xl"><Breadcrumb />{children}</main>
+              </div>
+            </div>
+          )
+        }
+      } catch { /* invalid cookie */ }
+    }
     redirect('/inloggen')
   }
 
