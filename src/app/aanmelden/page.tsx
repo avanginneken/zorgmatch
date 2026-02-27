@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Heart, Star, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { DEMO_ACCOUNTS, setDemoSession } from '@/lib/demo'
 
 type UserType = 'zorgvrager' | 'zorgverlener'
 
@@ -64,12 +65,19 @@ function AanmeldenForm() {
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your_supabase_project_url'
 
+  const handleDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
+    setDemoSession(account.rol, account.naam)
+    if (account.rol === 'BEHEER') router.push('/beheer/dashboard')
+    else if (account.rol === 'ZORGVERLENER') router.push('/zorgverlener/dashboard')
+    else router.push('/zorgvrager/dashboard')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
     if (!isSupabaseConfigured) {
-      setError('Aanmelden is niet beschikbaar in demo-modus. Ga naar de inlogpagina om met een demo-account in te loggen.')
+      setError('Registratie is momenteel niet beschikbaar. Gebruik een demo-account hieronder om de app te verkennen.')
       return
     }
 
@@ -443,6 +451,42 @@ function AanmeldenForm() {
             </p>
           </form>
         </div>
+
+        {/* Demo accounts sectie */}
+        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <p className="font-semibold text-amber-900 mb-1 text-sm">🧪 Demo-modus — direct uitproberen</p>
+          <p className="text-xs text-amber-700 mb-3">
+            {isSupabaseConfigured
+              ? 'Wil je de app eerst verkennen zonder te registreren? Log in met een demo-account.'
+              : 'Registratie is niet beschikbaar in demo-modus. Log in met een van de demo-accounts.'}
+          </p>
+          <div className="space-y-2">
+            {DEMO_ACCOUNTS.map(account => (
+              <button
+                key={account.email}
+                type="button"
+                onClick={() => handleDemoLogin(account)}
+                className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-all flex items-center gap-3 ${
+                  account.rol === 'BEHEER'
+                    ? 'bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-800'
+                    : account.rol === 'ZORGVERLENER'
+                    ? 'bg-teal-50 border-teal-200 hover:bg-teal-100 text-teal-800'
+                    : 'bg-blue-50 border-blue-200 hover:bg-blue-100 text-blue-800'
+                }`}
+              >
+                <span className="text-lg">
+                  {account.rol === 'BEHEER' ? '⚙️' : account.rol === 'ZORGVERLENER' ? '🩺' : '💙'}
+                </span>
+                <div>
+                  <div className="font-medium">{account.naam}</div>
+                  <div className="text-xs opacity-70">{account.rol.toLowerCase().replace('_', ' ')}</div>
+                </div>
+                <span className="ml-auto text-xs opacity-60 font-medium">Direct inloggen →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   )
