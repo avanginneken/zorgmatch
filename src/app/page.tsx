@@ -209,6 +209,12 @@ export default function HomePage() {
             <span className="font-semibold text-white">ZorgMatch</span>
           </div>
           <p className="text-sm">© 2026 ZorgMatch · Alle data opgeslagen in de EU · AVG-conform</p>
+          <p className="text-xs text-gray-500">
+            Een project van{' '}
+            <a href="https://www.vibecoders.nl" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors underline underline-offset-2">
+              vibecoders.nl
+            </a>
+          </p>
           <div className="flex gap-4 text-sm">
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/voorwaarden" className="hover:text-white">Voorwaarden</Link>
