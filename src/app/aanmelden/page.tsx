@@ -109,7 +109,16 @@ function AanmeldenForm() {
       })
 
       if (authError) {
-        setError(authError.message)
+        console.error('Supabase auth fout:', JSON.stringify(authError))
+        if (authError.message?.includes('Failed to fetch') || authError.message?.includes('fetch')) {
+          setError('Verbinding met server mislukt. Controleer uw internetverbinding of probeer het later opnieuw.')
+        } else if (authError.message?.includes('User already registered') || authError.message?.includes('already registered')) {
+          setError('Dit e-mailadres is al geregistreerd. Ga naar inloggen.')
+        } else if (authError.message?.includes('rate limit') || authError.status === 429) {
+          setError('Te veel pogingen. Wacht even en probeer het opnieuw.')
+        } else {
+          setError(authError.message || 'Er is een fout opgetreden bij het aanmaken van uw account.')
+        }
         return
       }
 
