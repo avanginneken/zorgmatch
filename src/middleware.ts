@@ -50,6 +50,11 @@ export async function middleware(request: NextRequest) {
   const isProtected = protectedPrefixes.some(prefix => path.startsWith(prefix))
 
   if (isProtected && !user) {
+    // Allow demo sessions through (cookie-based auth for prototype mode)
+    const demoCookie = request.cookies.get('zorgmatch_demo')
+    if (demoCookie?.value) {
+      return supabaseResponse
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/inloggen'
     return NextResponse.redirect(url)
