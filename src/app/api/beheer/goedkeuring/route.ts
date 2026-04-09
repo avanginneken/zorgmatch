@@ -4,7 +4,6 @@ import { DEMO_COOKIE } from '@/lib/demo'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
 async function isBeheer(): Promise<boolean> {
-  // Check demo cookie
   try {
     const cookieStore = await cookies()
     const demoCookie = cookieStore.get(DEMO_COOKIE)
@@ -14,7 +13,6 @@ async function isBeheer(): Promise<boolean> {
     }
   } catch { /* ignore */ }
 
-  // Check real Supabase session
   try {
     const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -26,6 +24,9 @@ async function isBeheer(): Promise<boolean> {
   }
 }
 
+// UUID v4 regex
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export async function PATCH(request: NextRequest) {
   if (!(await isBeheer())) {
     return NextResponse.json({ error: 'Niet geautoriseerd' }, { status: 401 })
@@ -36,6 +37,11 @@ export async function PATCH(request: NextRequest) {
 
   if (!profielId || !actie) {
     return NextResponse.json({ error: 'Ongeldige aanvraag' }, { status: 400 })
+  }
+
+  // Demo-IDs zijn geen echte UUIDs — simuleer succes zonder DB-aanroep
+  if (!UUID_RE.test(profielId)) {
+    return NextResponse.json({ success: true, demo: true })
   }
 
   try {
@@ -54,14 +60,14 @@ export async function PATCH(request: NextRequest) {
 
       if (error) throw error
 
-      // Fetch gebruiker_id for notification
+      // Stuur notificatie naar zorgverlener
       const { data: profiel } = await supabase
         .from('zorgverlener_profielen')
         .select('gebruiker_id')
         .eq('id', profielId)
-        .single()
+        .maybeSingle()
 
-      if (profiel) {
+      if (profiel?.gebruiker_id) {
         await supabase.from('notificaties').insert({
           gebruiker_id: profiel.gebruiker_id,
           type: 'ACCOUNT_GOEDGEKEURD',
@@ -81,7 +87,7 @@ export async function PATCH(request: NextRequest) {
         .from('zorgverlener_profielen')
         .select('gebruiker_id')
         .eq('id', profielId)
-        .single()
+        .maybeSingle()
 
       const { error } = await supabase
         .from('zorgverlener_profielen')
@@ -93,7 +99,7 @@ export async function PATCH(request: NextRequest) {
 
       if (error) throw error
 
-      if (profiel) {
+      if (profiel?.gebruiker_id) {
         await supabase.from('notificaties').insert({
           gebruiker_id: profiel.gebruiker_id,
           type: 'ACCOUNT_AFGEKEURD',

@@ -1,6 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { FileText, Plus, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { FileText, Plus, CheckCircle, Clock, XCircle, Trash2 } from 'lucide-react'
 
 const statusConfig = {
   OPEN: { label: 'Open', color: 'text-amber-600 bg-amber-50 border-amber-200', icon: Clock },
@@ -20,23 +22,52 @@ const zorgtypeLabels: Record<string, string> = {
   geestelijke_gezondheidszorg: 'GGZ begeleiding',
 }
 
-export default async function ZorgvragenPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function ZorgvragenPage() {
+  const [zorgvragen, setZorgvragen] = useState<any[]>([])
+  const [laden, setLaden] = useState(true)
+  const [verwijderenId, setVerwijderenId] = useState<string | null>(null)
+  const [bevestigId, setBevestigId] = useState<string | null>(null)
 
-  const { data: gebruiker } = await supabase
-    .from('gebruikers')
-    .select('id')
-    .eq('auth_id', user?.id ?? '')
-    .single()
+  const laadZorgvragen = useCallback(async () => {
+    try {
+      const res = await fetch('/api/zorgvragen/lijst')
+      if (res.ok) {
+        const data = await res.json()
+        setZorgvragen(data.zorgvragen || [])
+      }
+    } finally {
+      setLaden(false)
+    }
+  }, [])
 
-  const { data: zorgvragen } = await supabase
-    .from('zorgvragen')
-    .select('*, matches(id, status)')
-    .eq('zorgvrager_id', gebruiker?.id ?? '')
-    .order('aangemaakt_op', { ascending: false })
+  useEffect(() => {
+    laadZorgvragen()
+  }, [laadZorgvragen])
 
-  const items = zorgvragen || []
+  const verwijder = async (id: string) => {
+    setVerwijderenId(id)
+    try {
+      const res = await fetch(`/api/zorgvragen?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setZorgvragen(prev => prev.filter(z => z.id !== id))
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Verwijderen mislukt')
+      }
+    } finally {
+      setVerwijderenId(null)
+      setBevestigId(null)
+    }
+  }
+
+  if (laden) {
+    return (
+      <div className="space-y-4 max-w-4xl">
+        <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
+        <div className="h-48 bg-white rounded-xl border border-gray-100 animate-pulse" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -55,7 +86,7 @@ export default async function ZorgvragenPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-        {items.length === 0 ? (
+        {zorgvragen.length === 0 ? (
           <div className="p-16 text-center">
             <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
             <h3 className="font-semibold text-gray-700 mb-1">Nog geen zorgaanvragen</h3>
@@ -70,18 +101,21 @@ export default async function ZorgvragenPage() {
           </div>
         ) : (
           <>
-            <div className="px-5 py-4 border-b border-gray-100 grid grid-cols-5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="px-5 py-4 border-b border-gray-100 grid grid-cols-6 text-xs font-medium text-gray-500 uppercase tracking-wide">
               <span className="col-span-2">Zorgtype / Omschrijving</span>
               <span>Locatie</span>
               <span>Datum</span>
               <span>Status</span>
+              <span></span>
             </div>
             <div className="divide-y divide-gray-50">
-              {items.map((z: any) => {
+              {zorgvragen.map((z: any) => {
                 const status = statusConfig[z.status as keyof typeof statusConfig]
                 const StatusIcon = status?.icon || Clock
+                const kanVerwijderen = z.status === 'OPEN'
+
                 return (
-                  <div key={z.id} className="px-5 py-4 grid grid-cols-5 items-center hover:bg-gray-50 transition-colors">
+                  <div key={z.id} className="px-5 py-4 grid grid-cols-6 items-center hover:bg-gray-50 transition-colors">
                     <div className="col-span-2">
                       <p className="font-medium text-sm text-gray-900">
                         {zorgtypeLabels[z.zorgtype] || z.zorgtype}
@@ -96,6 +130,35 @@ export default async function ZorgvragenPage() {
                       <StatusIcon className="w-3 h-3" />
                       {status?.label || z.status}
                     </span>
+                    <div className="flex justify-end">
+                      {kanVerwijderen && (
+                        bevestigId === z.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => verwijder(z.id)}
+                              disabled={verwijderenId === z.id}
+                              className="text-xs bg-red-600 text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                            >
+                              {verwijderenId === z.id ? '...' : 'Ja, verwijder'}
+                            </button>
+                            <button
+                              onClick={() => setBevestigId(null)}
+                              className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+                            >
+                              Annuleer
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setBevestigId(z.id)}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Aanvraag verwijderen"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )
+                      )}
+                    </div>
                   </div>
                 )
               })}

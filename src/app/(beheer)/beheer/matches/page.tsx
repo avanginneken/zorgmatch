@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
 import { Link2 } from 'lucide-react'
+import { cookies } from 'next/headers'
+import { DEMO_COOKIE } from '@/lib/demo'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   VOORGESTELD: { label: 'Voorgesteld', color: 'text-amber-700 bg-amber-50' },
@@ -8,19 +9,43 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   GEANNULEERD: { label: 'Geannuleerd', color: 'text-gray-700 bg-gray-100' },
 }
 
+const DEMO_MATCHES = [
+  { id: 'm1', status: 'BEVESTIGD', aangemaakt_op: new Date(Date.now() - 86400000).toISOString(), commissie_bedrag: 34, zorgvraag: { zorgtype: 'verpleging', stad: 'Utrecht', indicatiebedrag: 55 }, zorgverlener: { naam: 'Jan Verpleging' } },
+  { id: 'm2', status: 'AFGEROND', aangemaakt_op: new Date(Date.now() - 604800000).toISOString(), commissie_bedrag: 50, zorgvraag: { zorgtype: 'begeleiding', stad: 'Den Haag', indicatiebedrag: 50 }, zorgverlener: { naam: 'Ahmed Yilmaz' } },
+  { id: 'm3', status: 'VOORGESTELD', aangemaakt_op: new Date().toISOString(), commissie_bedrag: 0, zorgvraag: { zorgtype: 'persoonlijke_verzorging', stad: 'Amsterdam', indicatiebedrag: 45 }, zorgverlener: { naam: 'Jan Verpleging' } },
+]
+
+async function getMatches() {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const supabase = createAdminClient()
+    const { data } = await supabase
+      .from('matches')
+      .select(`
+        *,
+        zorgvraag:zorgvragen (zorgtype, stad, indicatiebedrag),
+        zorgverlener:gebruikers!matches_zorgverlener_id_fkey (naam)
+      `)
+      .order('aangemaakt_op', { ascending: false })
+    return data || []
+  } catch {
+    return []
+  }
+}
+
+async function isDemoSessie(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies()
+    return !!cookieStore.get(DEMO_COOKIE)?.value
+  } catch {
+    return false
+  }
+}
+
 export default async function BeheerMatchesPage() {
-  const supabase = await createClient()
+  const [matchData, isDemo] = await Promise.all([getMatches(), isDemoSessie()])
+  const items = isDemo && matchData.length === 0 ? DEMO_MATCHES : matchData
 
-  const { data: matches } = await supabase
-    .from('matches')
-    .select(`
-      *,
-      zorgvraag:zorgvragen (zorgtype, stad, indicatiebedrag),
-      zorgverlener:gebruikers!matches_zorgverlener_id_fkey (naam)
-    `)
-    .order('aangemaakt_op', { ascending: false })
-
-  const items = matches || []
   const totaalCommissie = items
     .filter((m: any) => m.status === 'BEVESTIGD' || m.status === 'AFGEROND')
     .reduce((sum: number, m: any) => sum + (m.commissie_bedrag || 0), 0)
@@ -31,6 +56,12 @@ export default async function BeheerMatchesPage() {
         <h1 className="text-2xl font-bold text-gray-900">Matches</h1>
         <p className="text-gray-600 mt-1">Alle koppelingen tussen zorgvragers en zorgverleners</p>
       </div>
+
+      {isDemo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+          Demo-modus: voorbeelddata wordt getoond.
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
