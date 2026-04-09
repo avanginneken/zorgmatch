@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, XCircle, FileText, User, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 
@@ -54,35 +53,17 @@ export function GoedkeuringClient({
 
   const keurGoed = async (profiel: ZorgverlenerProfiel) => {
     setLoading(profiel.id)
-    const supabase = createClient()
-
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: beheerder } = await supabase
-      .from('gebruikers')
-      .select('id')
-      .eq('auth_id', user!.id)
-      .single()
-
-    await supabase
-      .from('zorgverlener_profielen')
-      .update({
-        goedgekeurd: true,
-        goedgekeurd_op: new Date().toISOString(),
-        goedgekeurd_door: beheerder?.id,
-        document_status: 'GOEDGEKEURD',
-      })
-      .eq('id', profiel.id)
-
-    // Send notification to zorgverlener
-    await supabase.from('notificaties').insert({
-      gebruiker_id: profiel.gebruiker_id,
-      type: 'ACCOUNT_GOEDGEKEURD',
-      titel: 'Uw account is goedgekeurd!',
-      bericht: 'Gefeliciteerd! Uw ZorgMatch account is goedgekeurd. U kunt nu zorgvragen ontvangen.',
+    const res = await fetch('/api/beheer/goedkeuring', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profielId: profiel.id, actie: 'goedkeuren' }),
     })
-
     setLoading(null)
-    router.refresh()
+    if (res.ok) {
+      router.refresh()
+    } else {
+      alert('Fout bij goedkeuren. Probeer opnieuw.')
+    }
   }
 
   const keurAf = async (profiel: ZorgverlenerProfiel) => {
@@ -91,27 +72,18 @@ export function GoedkeuringClient({
       alert('Geef een reden voor afwijzing')
       return
     }
-
     setLoading(profiel.id)
-    const supabase = createClient()
-
-    await supabase
-      .from('zorgverlener_profielen')
-      .update({
-        document_status: 'AFGEKEURD',
-        afwijzing_reden: reden,
-      })
-      .eq('id', profiel.id)
-
-    await supabase.from('notificaties').insert({
-      gebruiker_id: profiel.gebruiker_id,
-      type: 'ACCOUNT_AFGEKEURD',
-      titel: 'Aanvraag niet goedgekeurd',
-      bericht: `Uw aanvraag is helaas niet goedgekeurd. Reden: ${reden}`,
+    const res = await fetch('/api/beheer/goedkeuring', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profielId: profiel.id, actie: 'afkeuren', reden }),
     })
-
     setLoading(null)
-    router.refresh()
+    if (res.ok) {
+      router.refresh()
+    } else {
+      alert('Fout bij afkeuren. Probeer opnieuw.')
+    }
   }
 
   const renderProfiel = (profiel: ZorgverlenerProfiel, isExpanded: boolean) => (

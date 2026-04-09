@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { Users, FileText, CheckCircle, TrendingUp, Clock, AlertCircle, Euro, Activity, UserPlus, Link2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -21,27 +20,34 @@ const DEMO_ACTIVITY = [
 ]
 
 export default async function BeheerDashboard() {
-  const supabase = await createClient()
+  let totaalGebruikers = 0, zorgverleners = 0, zorgvragers = 0
+  let openGoedkeuring = 0, openZorgvragen = 0, totaalMatches = 0
+  let recenteGebruikers: any[] = [], recenteZorgvragen: any[] = []
 
-  const [
-    { count: totaalGebruikers },
-    { count: zorgverleners },
-    { count: zorgvragers },
-    { count: openGoedkeuring },
-    { count: openZorgvragen },
-    { count: totaalMatches },
-    { data: recenteGebruikers },
-    { data: recenteZorgvragen },
-  ] = await Promise.all([
-    supabase.from('gebruikers').select('id', { count: 'exact', head: true }),
-    supabase.from('gebruikers').select('id', { count: 'exact', head: true }).eq('rol', 'ZORGVERLENER'),
-    supabase.from('gebruikers').select('id', { count: 'exact', head: true }).eq('rol', 'ZORGVRAGER'),
-    supabase.from('zorgverlener_profielen').select('id', { count: 'exact', head: true }).eq('goedgekeurd', false),
-    supabase.from('zorgvragen').select('id', { count: 'exact', head: true }).eq('status', 'OPEN'),
-    supabase.from('matches').select('id', { count: 'exact', head: true }),
-    supabase.from('gebruikers').select('id, naam, email, rol, aangemeld_op').order('aangemeld_op', { ascending: false }).limit(5),
-    supabase.from('zorgvragen').select('id, zorgtype, stad, status, aangemaakt_op, indicatiebedrag').order('aangemaakt_op', { ascending: false }).limit(5),
-  ])
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const supabase = createAdminClient()
+
+    const [g, v, vr, gk, zv, m, rg, rz] = await Promise.all([
+      supabase.from('gebruikers').select('id', { count: 'exact', head: true }),
+      supabase.from('gebruikers').select('id', { count: 'exact', head: true }).eq('rol', 'ZORGVERLENER'),
+      supabase.from('gebruikers').select('id', { count: 'exact', head: true }).eq('rol', 'ZORGVRAGER'),
+      supabase.from('zorgverlener_profielen').select('id', { count: 'exact', head: true }).eq('goedgekeurd', false),
+      supabase.from('zorgvragen').select('id', { count: 'exact', head: true }).eq('status', 'OPEN'),
+      supabase.from('matches').select('id', { count: 'exact', head: true }),
+      supabase.from('gebruikers').select('id, naam, email, rol, aangemeld_op').order('aangemeld_op', { ascending: false }).limit(5),
+      supabase.from('zorgvragen').select('id, zorgtype, stad, status, aangemaakt_op, indicatiebedrag').order('aangemaakt_op', { ascending: false }).limit(5),
+    ])
+
+    totaalGebruikers = g.count || 0
+    zorgverleners = v.count || 0
+    zorgvragers = vr.count || 0
+    openGoedkeuring = gk.count || 0
+    openZorgvragen = zv.count || 0
+    totaalMatches = m.count || 0
+    recenteGebruikers = rg.data || []
+    recenteZorgvragen = rz.data || []
+  } catch { /* service role niet beschikbaar - demo modus */ }
 
   const statusConfig: Record<string, string> = {
     OPEN: 'bg-amber-100 text-amber-700',
@@ -89,11 +95,11 @@ export default async function BeheerDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <Users className="w-5 h-5 text-blue-600 mb-2" />
-          <div className="text-3xl font-bold text-gray-900">{totaalGebruikers || 103}</div>
+          <div className="text-3xl font-bold text-gray-900">{totaalGebruikers}</div>
           <div className="text-sm text-gray-600 mt-0.5">Totaal gebruikers</div>
           <div className="flex items-center gap-2 mt-2">
             <TrendArrow value={22} />
-            <span className="text-xs text-gray-400">{zorgvragers || 67} vragers · {zorgverleners || 34} verleners</span>
+            <span className="text-xs text-gray-400">{zorgvragers} vragers · {zorgverleners} verleners</span>
           </div>
         </div>
 
@@ -108,7 +114,7 @@ export default async function BeheerDashboard() {
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <FileText className="w-5 h-5 text-teal-600 mb-2" />
-          <div className="text-3xl font-bold text-gray-900">{openZorgvragen || 23}</div>
+          <div className="text-3xl font-bold text-gray-900">{openZorgvragen}</div>
           <div className="text-sm text-gray-600 mt-0.5">Open zorgvragen</div>
           <div className="flex items-center gap-2 mt-2">
             <TrendArrow value={18} />
@@ -118,7 +124,7 @@ export default async function BeheerDashboard() {
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
           <CheckCircle className="w-5 h-5 text-green-600 mb-2" />
-          <div className="text-3xl font-bold text-gray-900">{totaalMatches || 68}</div>
+          <div className="text-3xl font-bold text-gray-900">{totaalMatches}</div>
           <div className="text-sm text-gray-600 mt-0.5">Totaal matches</div>
           <div className="flex items-center gap-2 mt-2">
             <TrendArrow value={31} />
