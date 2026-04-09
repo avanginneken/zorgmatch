@@ -18,7 +18,12 @@ export default function InloggenPage() {
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your_supabase_project_url'
 
-  const handleDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
+  const handleDemoLogin = async (account: typeof DEMO_ACCOUNTS[0]) => {
+    // Zorg dat eventuele Supabase-sessie wordt afgesloten zodat de demo-cookie leidend is
+    if (isSupabaseConfigured) {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    }
     setDemoSession(account.rol, account.naam)
     if (account.rol === 'BEHEER') {
       router.push('/beheer/dashboard')
@@ -38,7 +43,7 @@ export default function InloggenPage() {
       a => a.email === form.email && a.password === form.password
     )
     if (demoAccount) {
-      handleDemoLogin(demoAccount)
+      await handleDemoLogin(demoAccount)
       return
     }
 

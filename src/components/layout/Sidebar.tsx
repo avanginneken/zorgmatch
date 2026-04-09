@@ -7,7 +7,7 @@ import {
   Home, FileText, Users, CheckSquare, BarChart2,
   Settings, Bell, CreditCard, User, Briefcase,
   ChevronLeft, ChevronRight, Link2, ClipboardList,
-  Heart
+  Heart, Star
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -21,7 +21,7 @@ const zorgvragerItems: SidebarItem[] = [
   { href: '/zorgvrager/zorgvraag/nieuw', label: 'Nieuwe aanvraag', icon: FileText },
   { href: '/zorgvrager/zorgvragen', label: 'Mijn aanvragen', icon: ClipboardList },
   { href: '/zorgvrager/betalingen', label: 'Betalingen', icon: CreditCard },
-  { href: '/profiel', label: 'Profiel', icon: User },
+  { href: '/zorgvrager/profiel', label: 'Profiel', icon: User },
 ]
 
 const zorgverlenerItems: SidebarItem[] = [
@@ -43,6 +43,7 @@ const beheerItems: SidebarItem[] = [
   { href: '/beheer/indicaties', label: 'Indicatietarieven', icon: Settings },
   { href: '/beheer/analytics', label: 'Analytics', icon: BarChart2 },
   { href: '/beheer/audit-log', label: 'Audit Log', icon: ClipboardList },
+  { href: '/beheer/reviews', label: 'Reviews', icon: Star },
 ]
 
 interface SidebarProps {

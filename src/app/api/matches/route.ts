@@ -123,6 +123,52 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Geen toegang' }, { status: 403 })
     }
 
+    if (actie === 'afronden') {
+      // Alleen zorgverlener kan opdracht afronden
+      const { data: verlener } = await supabase
+        .from('gebruikers')
+        .select('id')
+        .eq('auth_id', user.id)
+        .single()
+
+      if (!verlener || match.zorgverlener_id !== verlener.id) {
+        return NextResponse.json({ error: 'Geen toegang' }, { status: 403 })
+      }
+      if (match.status !== 'BEVESTIGD') {
+        return NextResponse.json({ error: 'Match is niet actief' }, { status: 400 })
+      }
+
+      await supabase
+        .from('matches')
+        .update({ status: 'AFGEROND' })
+        .eq('id', match_id)
+
+      await supabase
+        .from('zorgvragen')
+        .update({ status: 'AFGEROND' })
+        .eq('id', zorgvraag.id)
+
+      // Notificeer beide partijen met link naar reviewformulier
+      await supabase.from('notificaties').insert([
+        {
+          gebruiker_id: zorgvraag.zorgvrager_id,
+          type: 'REVIEW_UITNODIGING',
+          titel: 'Hoe was uw zorgervaring?',
+          bericht: 'De opdracht is afgerond. Laat een beoordeling achter voor uw zorgverlener.',
+          data: { match_id, url: `/zorgvrager/reviews/${match_id}` },
+        },
+        {
+          gebruiker_id: match.zorgverlener_id,
+          type: 'REVIEW_UITNODIGING',
+          titel: 'Beoordeel uw zorgvrager',
+          bericht: 'De opdracht is afgerond. Laat een beoordeling achter voor de zorgvrager.',
+          data: { match_id, url: `/zorgverlener/reviews/${match_id}` },
+        },
+      ])
+
+      return NextResponse.json({ success: true })
+    }
+
     if (actie === 'bevestigen') {
       // Confirm this match
       await supabase

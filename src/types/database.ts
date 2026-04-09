@@ -3,6 +3,10 @@ export type VraagStatus = 'OPEN' | 'GEKOPPELD' | 'AFGEROND' | 'GEANNULEERD'
 export type MatchStatus = 'VOORGESTELD' | 'BEVESTIGD' | 'AFGEROND'
 export type BetalingStatus = 'OPEN' | 'BETAALD' | 'MISLUKT' | 'TERUGBETAALD'
 export type DocumentStatus = 'IN_BEHANDELING' | 'GOEDGEKEURD' | 'AFGEKEURD'
+export type ReviewStatus = 'INGEDIEND' | 'ZICHTBAAR' | 'GEMELD' | 'VERBORGEN'
+export type Mobiliteit = 'ZELFSTANDIG' | 'ROLLATOR' | 'ROLSTOEL' | 'BEDLEGERIG'
+export type ReanimatieStatus = 'JA' | 'NEE' | 'ONBEKEND'
+export type ToegangsMethode = 'SLEUTELKLUIS' | 'AANWEZIG_BIJ_AANKOMST' | 'MANTELZORGER' | 'ANDERS'
 
 export interface Gebruiker {
   id: string
@@ -93,6 +97,84 @@ export interface AuditLog {
   data: Record<string, unknown>
   ip?: string
   timestamp: string
+}
+
+// Scores per reviewer_rol
+export interface ReviewScoresZorgverlener {
+  professionaliteit: number   // 1-5
+  communicatie: number        // 1-5
+  punctualiteit: number       // 1-5
+  vertrouwen: number          // 1-5
+}
+
+export interface ReviewScoresZorgvrager {
+  duidelijkheid_vraag: number   // 1-5
+  respectvolle_omgang: number   // 1-5
+  bereikbaarheid: number        // 1-5
+}
+
+export interface Review {
+  id: string
+  match_id: string
+  reviewer_id: string
+  reviewee_id: string
+  reviewer_rol: Rol
+  scores: ReviewScoresZorgverlener | ReviewScoresZorgvrager
+  tekst?: string
+  status: ReviewStatus
+  gemeld_door?: string
+  gemeld_op?: string
+  gemeld_reden?: string
+  beheer_besluit?: string
+  beheer_besluit_op?: string
+  beheer_besluit_door?: string
+  aangemaakt_op: string
+  reviewer?: Gebruiker
+  reviewee?: Gebruiker
+}
+
+export interface GemiddeldeScores {
+  totaal_reviews: number
+  gem_professionaliteit: number
+  gem_communicatie: number
+  gem_punctualiteit: number
+  gem_vertrouwen: number
+  gem_totaal: number
+}
+
+export interface ZorgvragerProfiel {
+  id: string
+  gebruiker_id: string
+
+  // Huisdieren
+  huisdieren_aanwezig?: boolean
+  huisdier_type?: string
+
+  // Gezondheid
+  allergieen?: string
+  medische_aandachtspunten?: string
+  mobiliteit?: Mobiliteit
+
+  // Wilsverklaring
+  // Uitsluitend ter informatie voor de zorgverlener.
+  // ZorgMatch draagt geen medische verantwoordelijkheid.
+  reanimatie?: ReanimatieStatus
+  dnr_aanwezig?: boolean
+
+  // Noodinformatie
+  noodmedicatie_aanwezig?: boolean
+  noodmedicatie_toelichting?: string
+
+  // Noodcontact
+  noodcontact_naam?: string
+  noodcontact_telefoon?: string
+
+  // Toegang (geen codes opslaan)
+  toegang_methode?: ToegangsMethode
+  toegang_toelichting?: string
+
+  created_at: string
+  updated_at: string
 }
 
 export const ZORGTYPES = [

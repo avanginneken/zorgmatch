@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { Briefcase, CheckCircle, Clock } from 'lucide-react'
+import Link from 'next/link'
+import { Briefcase, CheckCircle, Clock, Star } from 'lucide-react'
+import { AfrondButton } from '@/components/matches/AfrondButton'
 
 const matchStatusConfig: Record<string, { label: string; color: string }> = {
   VOORGESTELD: { label: 'In behandeling', color: 'text-amber-600 bg-amber-50 border-amber-200' },
@@ -100,6 +102,20 @@ export default async function MijnOpdrachtenPage() {
                         {new Date(m.aangemaakt_op).toLocaleDateString('nl-NL')}
                         {m.zorgvraag?.indicatiebedrag && ` · €${m.zorgvraag.indicatiebedrag}/uur`}
                       </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      {m.status === 'BEVESTIGD' && (
+                        <AfrondButton matchId={m.id} />
+                      )}
+                      {m.status === 'AFGEROND' && (
+                        <Link
+                          href={`/zorgverlener/reviews/${m.id}`}
+                          className="flex items-center gap-1.5 text-xs border border-amber-200 text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors"
+                        >
+                          <Star className="w-3.5 h-3.5" />
+                          Beoordeling geven
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>
