@@ -6,18 +6,12 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { DEMO_COOKIE } from '@/lib/demo'
 
-function isSupabaseConfigured() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your_supabase_project_url'
-  )
-}
-
 export default async function ProfielLayout({ children }: { children: React.ReactNode }) {
-  if (!isSupabaseConfigured()) {
-    const cookieStore = await cookies()
-    const demoCookie = cookieStore.get(DEMO_COOKIE)
-    if (!demoCookie) redirect('/inloggen')
+  // Controleer demo-cookie eerst — werkt ongeacht Supabase-configuratie
+  const cookieStore = await cookies()
+  const demoCookie = cookieStore.get(DEMO_COOKIE)
+
+  if (demoCookie?.value) {
     try {
       const session = JSON.parse(decodeURIComponent(demoCookie.value))
       const rol = session.rol as 'ZORGVRAGER' | 'ZORGVERLENER' | 'BEHEER'
@@ -26,7 +20,10 @@ export default async function ProfielLayout({ children }: { children: React.Reac
           <Navbar rol={rol} naam={session.naam} />
           <div className="flex">
             <Sidebar rol={rol} />
-            <main className="flex-1 p-6 min-w-0 max-w-3xl"><Breadcrumb />{children}</main>
+            <main className="flex-1 p-6 min-w-0 max-w-3xl">
+              <Breadcrumb />
+              {children}
+            </main>
           </div>
         </div>
       )
@@ -35,6 +32,7 @@ export default async function ProfielLayout({ children }: { children: React.Reac
     }
   }
 
+  // Geen demo-cookie → echte Supabase-sessie vereist
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/inloggen')
@@ -54,7 +52,10 @@ export default async function ProfielLayout({ children }: { children: React.Reac
       <Navbar rol={rol} naam={gebruiker.naam} />
       <div className="flex">
         <Sidebar rol={rol} />
-        <main className="flex-1 p-6 min-w-0 max-w-3xl"><Breadcrumb />{children}</main>
+        <main className="flex-1 p-6 min-w-0 max-w-3xl">
+          <Breadcrumb />
+          {children}
+        </main>
       </div>
     </div>
   )

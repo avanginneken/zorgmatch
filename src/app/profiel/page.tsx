@@ -19,21 +19,23 @@ const rolLabels: Record<string, { label: string; color: string }> = {
 export default async function ProfielPage() {
   let gebruiker: { naam: string; email: string; telefoon?: string; adres?: string; stad?: string; rol: string } | null = null
 
-  if (!isSupabaseConfigured()) {
-    const cookieStore = await cookies()
-    const demoCookie = cookieStore.get(DEMO_COOKIE)
-    if (demoCookie) {
-      try {
-        const session = JSON.parse(decodeURIComponent(demoCookie.value))
-        gebruiker = {
-          naam: session.naam,
-          email: session.rol === 'BEHEER' ? 'beheer@zorgmatch.nl' : session.rol === 'ZORGVERLENER' ? 'verlener@test.nl' : 'vrager@test.nl',
-          rol: session.rol,
-          stad: 'Amsterdam',
-        }
-      } catch { /* ignore */ }
-    }
-  } else {
+  // Demo-cookie — werkt altijd, ook als Supabase geconfigureerd is
+  const cookieStore = await cookies()
+  const demoCookie = cookieStore.get(DEMO_COOKIE)
+  if (demoCookie?.value) {
+    try {
+      const session = JSON.parse(decodeURIComponent(demoCookie.value))
+      gebruiker = {
+        naam: session.naam,
+        email: session.rol === 'BEHEER' ? 'beheer@zorgmatch.nl' : session.rol === 'ZORGVERLENER' ? 'verlener@test.nl' : 'vrager@test.nl',
+        rol: session.rol,
+        stad: 'Amsterdam',
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Geen demo-sessie → haal echte gebruiker op
+  if (!gebruiker && isSupabaseConfigured()) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {

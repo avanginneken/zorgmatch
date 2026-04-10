@@ -32,7 +32,7 @@ export default async function BeheerDashboard() {
       supabase.from('gebruikers').select('id', { count: 'exact', head: true }),
       supabase.from('gebruikers').select('id', { count: 'exact', head: true }).eq('rol', 'ZORGVERLENER'),
       supabase.from('gebruikers').select('id', { count: 'exact', head: true }).eq('rol', 'ZORGVRAGER'),
-      supabase.from('zorgverlener_profielen').select('id', { count: 'exact', head: true }).eq('goedgekeurd', false),
+      supabase.from('zorgverlener_profielen').select('id', { count: 'exact', head: true }).neq('goedgekeurd', true),
       supabase.from('zorgvragen').select('id', { count: 'exact', head: true }).eq('status', 'OPEN'),
       supabase.from('matches').select('id', { count: 'exact', head: true }),
       supabase.from('gebruikers').select('id, naam, email, rol, aangemeld_op').order('aangemeld_op', { ascending: false }).limit(5),

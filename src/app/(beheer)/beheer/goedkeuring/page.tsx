@@ -11,7 +11,7 @@ async function getProfielen() {
       supabase
         .from('zorgverlener_profielen')
         .select(`*, gebruiker:gebruikers (id, naam, email, telefoon, stad, adres, aangemeld_op)`)
-        .eq('goedgekeurd', false)
+        .neq('goedgekeurd', true)
         .order('created_at', { ascending: false }),
       supabase
         .from('zorgverlener_profielen')
