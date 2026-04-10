@@ -68,7 +68,7 @@ export default async function BeheerZorgvragenPage() {
         ))}
       </div>
 
-      <ZorgvragenTable zorgvragen={zorgvragen as any} />
+      <ZorgvragenTable zorgvragen={zorgvragen as any} isAdmin />
     </div>
   )
 }
